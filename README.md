@@ -1,4 +1,4 @@
-# Attendance Webapp
+# Attendance Webapp (Flask)
 This is a forked project from TFIP 2022.
 1. This project addresses a pain point in the Skillsfuture website we cannot have an overview of the attendance marked by students via Singpass QR.
 2. The webapp has a user interface which scraps some data from the class page to access an API call to skillsfuture.
@@ -13,11 +13,13 @@ Note: All sensitive information has been removed.
 
 
 ## Record of development history
+### 7-Mar-2023
 The purpose of the project is to address the pain point we previously experienced, which was the difficulty in identifying who has not signed the attendance on the SSG website.<br>
 The existing code (as of 7 Mar 2023) is functional. Nonetheless, there are two/more limitations. First, it is a bit slow; second, there is no user interface, but just Python codes.<br>
 I encourage all the collaborators to make any improvements you see fit. <br>
 -- Zhiyuan, 7/Mar/2023, at DigiPen Singapore
 
+### 14-Mar-2023
 Improvements:
 1. Used flask and bootstrap to create a user interface for the project.
 2. Modified the code to just use requests and access the api to return a json file, instead of selenium
@@ -25,6 +27,7 @@ Improvements:
 4. Changed to using sets to find the absentees. -- Sien Long 14/Mar/2023
 5. Migrated name list to off-site SQL database, credentials are in another file (config.py) -- Rong Yi 14/Mar/2023
 
+### 24-Mar-2023
 Further improvements:
 1. Stored namelists in a local database instead of on-script, removed all sensitive information.
 2. Added an optional script to use pywhat to send whatsapp message instead, to update the classgroup.
