@@ -1,7 +1,20 @@
-# scraping_attendance project
-## This side project is exclusively for TFIP-2022.
+# Attendance Webapp
+This is a forked project from TFIP 2022.
+1. This project addresses a pain point in the Skillsfuture website we cannot have an overview of the attendance marked by students via Singpass QR.
+2. The webapp has a user interface which scraps some data from the class page to access an API call to skillsfuture.
+3. The information is stored in a local database (customisable by user) which then allows an overview of absent and present students.
+4. There is also an optional script which does the backend work and messages a whatspp group via pywhatkit.
+
+Sien Long 26/Mar/2023
+
+Contributors: Wang Zhiyuan, Lim Rong Yi, Lim Sien Long 2023
+
+Note: All sensitive information has been removed.
+
+
+## Record of development history
 The purpose of the project is to address the pain point we previously experienced, which was the difficulty in identifying who has not signed the attendance on the SSG website.<br>
-The exitsing code (as of 7 Mar 2023) is functional. Nonetheless, there are two/more limitations. First, it is a bit slow; second, there is no user interface, but just Python codes.<br>
+The existing code (as of 7 Mar 2023) is functional. Nonetheless, there are two/more limitations. First, it is a bit slow; second, there is no user interface, but just Python codes.<br>
 I encourage all the collaborators to make any improvements you see fit. <br>
 -- Zhiyuan, 7/Mar/2023, at DigiPen Singapore
 
