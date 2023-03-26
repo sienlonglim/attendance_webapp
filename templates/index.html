@@ -3,20 +3,18 @@
 <!--Main content including form-->
 {% block main %}
     <h1>Attendance Checker</h1>
-    <p class="fs-5 col-md-8">Check for students' attendance in WSG portal with ease using this simple webapp.</p>
+    <p class="fs-5 col-12">Check for students' attendance in WSG portal with ease using this simple webapp.</p>
     <p>Enter url link for session:</p>
     <form method="post" id="attendance_form">
     <div class="mb-3">
         <input type="text" class="form-control" placeholder="Copy and paste the WSG session link here" name="urllink" input="{{ request.form['urllink'] }}"></input>
     </div>
     <div class="row mb-3">
-        <div class="col-4 md-3">
+        <div class="col-sm-4 md-3">
             <select class="form-control ", name="cohort" form="attendance_form" input="{{ request.form['cohort'] }}">
                 <option value="jan2023">January batch</option>
                 <option value="feb2023">February batch</option>
             </select>
-        </div>
-        <div class="col-sm md-3">
         </div>
     </div>
 
