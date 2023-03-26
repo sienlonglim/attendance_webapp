@@ -1,0 +1,4 @@
+ignore
+static/secrets.json
+venv
+PyWhatKit_DB.txt

@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+<!--Main content including form-->
+{% block main %}
+    <h4>Namelist: {% if cohort %}{{ cohort|e }}{% endif %} cohort</h4>
+    <ol>
+        {% if namelist %}
+                {% for name in namelist %}
+                <li>{{ name|e }}</li>
+                {% endfor %}
+        {% endif %}
+    </ol>
+{% endblock %}
+
+<!--Lower content-->
+{% block lower %}
+    
+{% endblock %}

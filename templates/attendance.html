@@ -1,0 +1,54 @@
+{% extends 'index.html' %}
+
+<!--Error messages to be printed before start button-->
+{% block error %}
+    {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="p-2 alert alert-warning">
+                {% for message in messages %}
+                {{ message|e }}
+                {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+{% endblock %}
+
+<!--Session info to be printed before attendance_report-->
+{% block session_info %} 
+    {% if attendance_report.session %}
+        <h4>Attendance code: {{ attendance_report.session|e }}</h4>
+        <p></p>
+        {% if attendance_report.QR %}
+        <img src="{{ url_for('static', filename= 'session_QR.png') }}" alt='QR code for the session'></img>
+        <!--style="height: 50px; max-width: 100%"-->
+        
+        {% endif %} 
+    {% endif %} 
+{% endblock %}
+
+<!--Left content-->
+{% block left %}
+    {% if attendance_report.present %}
+        <p>Total present {{ attendance_report.n_present }}</p>
+        {% for name in attendance_report.present %}
+            <li class="d-flex align-items-start mb-1">{{ name|e }}</li>
+        {% endfor %}
+    {% else %} 
+        <li class="text-muted d-flex align-items-start mb-1">No attendance taken yet</li>
+    {% endif %} 
+
+{% endblock %}
+
+<!--Right content-->
+{% block right %}
+    {% if attendance_report.absent %}
+        <p>Total absent {{ attendance_report.n_absent }}</p>
+        {% for name in attendance_report.absent %}
+            <li class="d-flex align-items-start mb-1">{{ name }}</li>
+        {% endfor %}
+    {% elif attendance_report %} 
+        <li class="text-muted d-flex align-items-start mb-1">None</li>
+    {% else %} 
+        <li class="text-muted d-flex align-items-start mb-1">No attendance taken yet</li>
+    {% endif %} 
+{% endblock %}

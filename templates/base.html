@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="generator" content="Hugo 0.104.2">
+    <title>DigiPen Attendance Checker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <link href="{{ url_for('static', filename= 'css/starter-template.css') }}" rel="stylesheet">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename= 'apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename= 'favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename= 'favicon-16x16.png') }}">
+  </head>
+  
+  <body>
+  
+  <!--Header-->
+  <div class="col-lg-8 mx-auto p-4 py-md-5">
+    <header class="d-flex align-items-center pb-3 mb-5 border-bottom">
+      <a href="https://www.digipen.edu.sg/" class="d-flex align-items-center text-dark text-decoration-none">
+        <img src="{{ url_for('static', filename= 'logo.png') }}" alt="Digipen Dragons" width="112" height="144"></img>
+        <span class="fs-2">  DigiPen Data Analytics Track</span>
+      </a>
+    </header>
+
+    <!--Content-->
+    <main>
+      {% block main %} {% endblock %}
+
+      <hr class="col-3 col-md-2 mb-5">
+
+      <!--Lower content-->
+      {% block lower %} {% endblock %}
+      
+    </main>
+
+    <footer class="pt-5 my-5 text-muted border-top">
+      Created using Bootstrap and Flask, by Wang Zhiyuan and Lim Sien Long &middot; &copy; 2023
+    </footer>
+  </div>
+
+
+    <script src="../assets/dist/js/bootstrap.bundle.min.js"></script>
+
+      
+  </body>
+</html>
