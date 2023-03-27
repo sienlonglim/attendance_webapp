@@ -101,4 +101,3 @@ if __name__ == "__main__":
             send_whatsapp_message(attendance_message) 
         else:
             print('Aborted')
-
