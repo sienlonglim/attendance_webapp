@@ -89,11 +89,16 @@ if __name__ == "__main__":
         currentDateAndTime = datetime.now()
         currentHour = currentDateAndTime.strftime("%H")
         currentMin = currentDateAndTime.strftime("%M")
-        attendance_message = f"*Attendance update at {currentHour}{currentMin}hrs:*\n\nClass Code: {attendance['session']} \n\nTotal present: {attendance['n_present']}\nAbsentees:\n{absentees}\nLink: https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html"
-        print(f'Message obtained as follows: \n{attendance_message}')
+        attendance_message = f"*Attendance update at {currentHour}{currentMin}hrs:*\nAttendance code: {attendance['session']} \n\nTotal present: {attendance['n_present']}\nAbsentees:\n{absentees}\nLink: https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html"
+        print(f'Message obtained as follows: \n{"*"*100}\n{attendance_message}\n{"*"*100}')
     except Exception as e:
         print(e)
     else:
         # Send the message if no problems
-        print('Now sending')
-        send_whatsapp_message(attendance_message) 
+        send = input('Send message? y/n : ')
+        if send == 'y':
+            print('Now sending')
+            send_whatsapp_message(attendance_message) 
+        else:
+            print('Aborted')
+
