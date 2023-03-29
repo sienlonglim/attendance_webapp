@@ -89,7 +89,7 @@ if __name__ == "__main__":
         currentDateAndTime = datetime.now()
         currentHour = currentDateAndTime.strftime("%H")
         currentMin = currentDateAndTime.strftime("%M")
-        attendance_message = f"*Attendance update at {currentHour}{currentMin}hrs:*\nAttendance code: {attendance['session']} \n\nTotal present: {attendance['n_present']}\nAbsentees:\n{absentees}\nLink: https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html"
+        attendance_message = f"*Attendance update at {currentHour}{currentMin}hrs:*\n{attendance['session']} \n\nTotal present: {attendance['n_present']}\nAbsentees:\n{absentees}\nLink: 'https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session']}&MOT=1#'"
         print(f'Message obtained as follows: \n{"-"*100}\n{attendance_message}\n{"-"*100}')
     except Exception as e:
         print(e)
