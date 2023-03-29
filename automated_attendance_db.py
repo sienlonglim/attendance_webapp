@@ -27,7 +27,7 @@ def check_attendance(cohort, urllink):
     # Access local database
     with open("static/secrets.json") as f:
            data = json.load(f)
-           config = data['mysql_connector']
+           config = data['pythonanywhere']
     
     # Connect to server on localhost
     try:

@@ -8,5 +8,50 @@ CREATE TABLE IF NOT EXISTS students (
 	PRIMARY KEY(student_id)
 );
 
+/*
 LOAD DATA INFILE 'F:/Natuyuki/Dropbox/Gitstuff/scraping_attendance/database/namelist.csv' INTO TABLE students FIELDS
 TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+*/
+
+INSERT INTO students (student_name, class, cohort_year)
+VALUES 
+('ASHLEY KOH SHU HUI','jan',2023),
+('BENSON TAN ZHI YONG','jan',2023),
+('CHAN ZHI HONG','jan',2023),
+('CHANG CHING-WEN','jan',2023),
+('CHEN ZHIYUAN','jan',2023),
+('CHOONG HUI XIN','jan',2023),
+('CHUA YONG KIAT','jan',2023),
+('CLIVE HAU QI JIE','jan',2023),
+('GAN YUN','jan',2023),
+('GOH LICK FONG','jan',2023),
+('GUO XIAOJUN','jan',2023),
+('HOON ZHI YU JOSEPH','jan',2023),
+('JASPER TAN WEI HENG','jan',2023),
+('JONATHAN LIEW YI MING','jan',2023),
+('KEITH JAYDEN FERNANDEZ','jan',2023),
+('KHO XIAO FEN','jan',2023),
+('KHOR JING LE EUGENE','jan',2023),
+('KOH CHONG KIAN','jan',2023),
+('KOH MEI-LING, PRISCILLA','jan',2023),
+("KRISTY CLAIRE NG YORK YNNE", "jan", 2023),
+("LAM SIU FAI", "jan", 2023),
+("LIM HONG YI", "jan", 2023),
+("LIM JUNJIE", "jan", 2023),
+("LIM RONG YI", "jan", 2023),
+("LIM SENG YONG, DAVID", "jan", 2023),
+("LIM SIEN LONG", "jan", 2023),
+("LIM YEW HUA", "jan", 2023),
+("LIN YANSHI DARRELL", "jan", 2023),
+("LIU HUILING, ADELINE", "jan", 2023),
+("LIU SHUXIONG, GEOFFREY", "jan", 2023),
+("LOI JIA EN", "jan", 2023),
+("MUHAMMAD FARHAN BIN FADZIL", "jan", 2023),
+("NG CHUEN SIONG, NELSON", "jan", 2023),
+('NURRUL ARIF BIN ABDUL RAHMAN', 'jan', 2023),
+('OON ZHI YONG IVAN', 'jan', 2023),
+('RHONDA LYNN MCGLADDERY', 'jan', 2023),
+('SOH SIEW THENG', 'jan', 2023),
+('TEO CHIN WEI', 'jan', 2023),
+('VIJAYAKUMAR RAMYA', 'jan', 2023),
+('WAYNE TAN WEN PING', 'jan', 2023);
