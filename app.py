@@ -10,7 +10,7 @@ import mysql.connector
 from mysql.connector import errorcode
 
 app = Flask(__name__)
-debug= True # Debug mode should be off if hosted on an external website
+debug= False # Debug mode should be off if hosted on an external website
 
 def get_value_from_json(json_file, key, sub_key=None):
    '''

@@ -2,3 +2,5 @@ ignore
 static/secrets.json
 venv
 PyWhatKit_DB.txt
+.DS_Store
+__pycache__
