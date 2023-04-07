@@ -32,3 +32,8 @@ Further improvements:
 1. Stored namelists in a local database instead of on-script, removed all sensitive information.
 2. Added an optional script to use pywhat to send whatsapp message instead, to update the classgroup.
 -- Sien Long 24/Mar/2023
+
+### 7-Apr-2023
+Updates:
+1. Added twilio features to create a whatsapp chatbot in Twilio sandbox using ngrok to access flask app.
+2. Tried out ngrok to host original flask app.
