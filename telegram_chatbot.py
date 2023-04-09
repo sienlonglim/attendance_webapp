@@ -115,7 +115,7 @@ def take_attendance(message):
         attendance_message = f"*Attendance update at {currentHour}{currentMin}hrs:*\n{attendance['session']} \n\nTotal present: {attendance['n_present']}\nAbsentees:\n{absentees}\nLink: 'https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session']}&MOT=1#'"
         print(f'Message obtained as follows: \n{"-"*100}\n{attendance_message}\n{"-"*100}')
     except Exception as e:
-        print(e)
+        print(f'Error encountered: {e}')
         bot.send_message(message.chat.id, "No available sessions at the moment.")
     else:      
         bot.send_message(message.chat.id, attendance_message)
@@ -128,7 +128,7 @@ def countdown(message):
     if time_remaining.total_seconds() < 0:
         bot.send_message(message.chat.id, "Started OJT lor!")
     else:
-        bot.send_message(message.chat.id, f"Days remaining until start of OJT (July 18th): {time_remaining.days}")
+        bot.send_message(message.chat.id, f"{time_remaining.days} Days remaining until start of OJT (July 18th)")
 
 
 @bot.message_handler(func = lambda message : message.chat.type == 'group')
