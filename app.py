@@ -70,8 +70,8 @@ def check_attendance(cohort, urllink):
         soup = BeautifulSoup(page.text, 'html.parser')
 
         # Session code eg. BH92347
-        session = soup.find_all(class_='session-desc')
-        session_code  = session[3].text.strip()
+        session = soup.find(class_='alternative-text').find_all('span')
+        session_code = session[3].text.split(': ')[1].split('.')[0]
 
         # API call using the session code, returns a json file containing students signed in
         api_url = f'https://www.myskillsfuture.gov.sg/api/get-attendance?attendanceCode={session_code}&motCode=1'
@@ -79,6 +79,7 @@ def check_attendance(cohort, urllink):
         present = set([x['name'] for x in api_response.json()])
 
         # Scraping the QR image for display on webapp
+        '''
         images = soup.find_all('img')
         data_url = images[1]['src']
         encoded_data_url = data_url.split(',')[1] # Removing the prefix 'data:image/png;base64,'
@@ -86,6 +87,7 @@ def check_attendance(cohort, urllink):
         session_QR = Image.open(BytesIO(bytes_decoded))
         session_QR.save("static/session_QR.png")
         session_QR = True
+        '''
 
         # Connect to server on localhost
         try:
@@ -111,7 +113,7 @@ def check_attendance(cohort, urllink):
         absent.sort()
         
         # We will pass a dictionary of all the results back to the routing function, which will then be used to render the html
-        return {'QR': session_QR, 'session': session_code, 'present':present, 'n_present':len(present), 'absent':absent, 'n_absent':len(absent)}
+        return {'QR': None, 'session': session_code, 'present':present, 'n_present':len(present), 'absent':absent, 'n_absent':len(absent)}
 
 # For visualling checking the namelist (just in case), there is no DOM access to this except a direct url input
 @app.route("/attendance/namelist/<cohort>")
