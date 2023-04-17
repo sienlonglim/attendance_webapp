@@ -16,8 +16,8 @@ def check_attendance(cohort, urllink):
     soup = BeautifulSoup(page.text, 'html.parser')
 
     # Session code eg. BH92347
-    session = soup.find_all(class_='session-desc')
-    session_code  = session[3].text.strip()
+    session = soup.find(class_='alternative-text').find_all('span')
+    session_code = session[3].text.split(': ')[1].split('.')[0]
 
     # API call using the session code, returns a json file containing students signed in
     api_url = f'https://www.myskillsfuture.gov.sg/api/get-attendance?attendanceCode={session_code}&motCode=1'
@@ -69,7 +69,7 @@ def send_whatsapp_message(message, group = 'HMASwA39Eu77B69Fb6rCZu'):
         print(e)
 
 if __name__ == "__main__":
-    urllink = 'https://www.myskillsfuture.gov.sg/api/take-attendance/6d8fbe3b26cf07a04f5a2c2f1086410c'
+    urllink = 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536'
 
     try:
         attendance = check_attendance('jan2023', urllink)

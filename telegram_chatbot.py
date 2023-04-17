@@ -59,8 +59,8 @@ def take_attendance(message):
         soup = BeautifulSoup(page.text, 'html.parser')
 
         # Session code eg. BH92347
-        session = soup.find_all(class_='session-desc')
-        session_code  = session[3].text.strip()
+        session = soup.find(class_='alternative-text').find_all('span')
+        session_code = session[3].text.split(': ')[1].split('.')[0]
 
         # API call using the session code, returns a json file containing students signed in
         api_url = f'https://www.myskillsfuture.gov.sg/api/get-attendance?attendanceCode={session_code}&motCode=1'
