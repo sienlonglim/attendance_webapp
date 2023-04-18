@@ -4,7 +4,6 @@ import json
 import mysql.connector
 from bs4 import BeautifulSoup
 from datetime import datetime
-from telebot.types import ReplyKeyboardRemove
 
 # Function to get config and API details
 def get_value_from_json(json_file, key, sub_key=None):
@@ -23,6 +22,73 @@ def get_value_from_json(json_file, key, sub_key=None):
 config = get_value_from_json("static/secrets.json", "mysql_connector")
 bot = telebot.TeleBot(get_value_from_json("static/secrets.json", "digipen_attendance_bot", "auth_token"))
 
+# Attendance check functions
+def check_attendance(cohort, urllink):
+    '''
+    Function call for doing the scraping and API call
+    '''
+    # Actual code for all the work is here!
+    # Getting the html page using requests and parsing using bs4
+    page = requests.get(urllink)
+    soup = BeautifulSoup(page.text, 'html.parser')
+
+    # Session code eg. BH92347
+    session = soup.find(class_='alternative-text').find_all('span')
+    session_code = session[3].text.split(': ')[1].split('.')[0]
+
+    # API call using the session code, returns a json file containing students signed in
+    api_url = f'https://www.myskillsfuture.gov.sg/api/get-attendance?attendanceCode={session_code}&motCode=1'
+    api_response = requests.get(api_url, headers={'Accept': 'application/json'})
+    present = set([x['name'] for x in api_response.json()])
+
+    # Connect to server on localhost
+    try:
+        cnx = mysql.connector.connect(**config)
+        print('Connected')
+        cursor = cnx.cursor()
+        query = ("SELECT student_name FROM students "
+                "WHERE class=%s AND cohort_year=%s")
+        cursor.execute(query, (cohort[:3],cohort[3:])) #eg of cohort -> 'jan2023'
+        namelist = set([name for (name,) in cursor])
+    except Exception as err:
+        print(type(err), err)
+    else:
+        cursor.close()
+        cnx.close()
+    
+    # Using set.difference will allow us to instantly get the absentees since our names are all unique
+    # note that this will give errors if two people have the exact same name!
+    absent = namelist.difference(present)
+    present = list(present)
+    absent = list(absent)
+    present.sort()
+    absent.sort()
+    
+    # We will pass a dictionary of all the results back to the routing function, which will then be used to render the html
+    return {'session': session_code, 'present':present, 'n_present':len(present), 'absent':absent, 'n_absent':len(absent)}
+
+def build_attendance_message(attendance):
+    '''
+    Input: dictionary of data from check_attendance function
+    '''
+    # Build absentees output
+    if len(attendance['absent'])<1:
+        absentees = 'None! =)\n'
+    else:
+        absentees = ''
+        count = 1
+        for x in attendance['absent']:
+            absentees += str(count)+'. ' + x + '\n'
+            count +=1
+
+    # Build the full message
+    currentDateAndTime = datetime.now()
+    currentHour = currentDateAndTime.strftime("%H")
+    currentMin = currentDateAndTime.strftime("%M")
+    attendance_message = f"Attendance update at {currentHour}{currentMin}hrs:\n{attendance['session']} \n\nTotal present: {attendance['n_present']}\nAbsentees:\n{absentees}\nLink: 'https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session']}&MOT=1#'"
+    print(f'Message obtained as follows: \n{"-"*100}\n{attendance_message}\n{"-"*100}')
+    return attendance_message
+
 # Start / help function call
 @bot.message_handler(commands=['help', 'start'])
 def help(message):
@@ -38,73 +104,6 @@ def help(message):
 # Attendance function call
 @bot.message_handler(commands=['attendance'])
 def take_attendance(message):
-
-    def check_attendance(cohort, urllink):
-        '''
-        Function call for doing the scraping and API call
-        '''
-        # Actual code for all the work is here!
-        # Getting the html page using requests and parsing using bs4
-        page = requests.get(urllink)
-        soup = BeautifulSoup(page.text, 'html.parser')
-
-        # Session code eg. BH92347
-        session = soup.find(class_='alternative-text').find_all('span')
-        session_code = session[3].text.split(': ')[1].split('.')[0]
-
-        # API call using the session code, returns a json file containing students signed in
-        api_url = f'https://www.myskillsfuture.gov.sg/api/get-attendance?attendanceCode={session_code}&motCode=1'
-        api_response = requests.get(api_url, headers={'Accept': 'application/json'})
-        present = set([x['name'] for x in api_response.json()])
-
-        # Connect to server on localhost
-        try:
-            cnx = mysql.connector.connect(**config)
-            print('Connected')
-            cursor = cnx.cursor()
-            query = ("SELECT student_name FROM students "
-                    "WHERE class=%s AND cohort_year=%s")
-            cursor.execute(query, (cohort[:3],cohort[3:])) #eg of cohort -> 'jan2023'
-            namelist = set([name for (name,) in cursor])
-        except Exception as err:
-            print(type(err), err)
-        else:
-            cursor.close()
-            cnx.close()
-        
-        # Using set.difference will allow us to instantly get the absentees since our names are all unique
-        # note that this will give errors if two people have the exact same name!
-        absent = namelist.difference(present)
-        present = list(present)
-        absent = list(absent)
-        present.sort()
-        absent.sort()
-        
-        # We will pass a dictionary of all the results back to the routing function, which will then be used to render the html
-        return {'session': session_code, 'present':present, 'n_present':len(present), 'absent':absent, 'n_absent':len(absent)}
-
-    def build_attendance_message(attendance):
-        '''
-        Input: dictionary of data from check_attendance function
-        '''
-        # Build absentees output
-        if len(attendance['absent'])<1:
-            absentees = 'None! =)\n'
-        else:
-            absentees = ''
-            count = 1
-            for x in attendance['absent']:
-                absentees += str(count)+'. ' + x + '\n'
-                count +=1
-
-        # Build the full message
-        currentDateAndTime = datetime.now()
-        currentHour = currentDateAndTime.strftime("%H")
-        currentMin = currentDateAndTime.strftime("%M")
-        attendance_message = f"Attendance update at {currentHour}{currentMin}hrs:\n{attendance['session']} \n\nTotal present: {attendance['n_present']}\nAbsentees:\n{absentees}\nLink: 'https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session']}&MOT=1#'"
-        print(f'Message obtained as follows: \n{"-"*100}\n{attendance_message}\n{"-"*100}')
-        return attendance_message
-
     urllink = 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536'
     try:
         attendance = check_attendance('jan23', urllink)
@@ -131,6 +130,17 @@ def countdown(message):
 def reset_keyboard(message):
     remove_markup = ReplyKeyboardRemove()
     bot.send_message(message.chat.id, 'Custom keyboards removed', reply_markup=remove_markup)
+
+@bot.message_handler(commands=['attendance_v2'])
+def take_attendance_v2(message):
+    reply_markup = telebot.types.InlineKeyboardMarkup(row_width=2)
+    reply_markup.add(telebot.types.InlineKeyboardButton('Jan Cohort', callback_data='jan23'), telebot.types.InlineKeyboardButton('Feb Cohort', callback_data='feb23'))
+    bot.send_message(message.chat.id, 'Select cohort', reply_markup=reply_markup)
+
+
+@bot.callback_query_handler(func=lambda call: True)
+def test_callback(call): # <- passes a CallbackQuery type object to your function
+    print(call)
 
 if __name__ == "__main__":
     print('Bot started')
