@@ -104,28 +104,31 @@ def help(message):
 # Countdown function call
 @bot.message_handler(commands=['countdown'])
 def countdown(message):
-    ojt_date = datetime(2023, 7, 18)
+    reply_markup = telebot.types.InlineKeyboardMarkup(row_width=2)
+    reply_markup.add(telebot.types.InlineKeyboardButton('Jan', callback_data='July 18th'), telebot.types.InlineKeyboardButton('Feb', callback_data='August 15th'))
+    bot.send_message(message.chat.id, 'Select cohort for countdown', reply_markup=reply_markup)    
+
+@bot.callback_query_handler(func=lambda call: call.data == 'July 18th' or call.data == 'August 15th')
+def countdown_callback(call):
+    if call.data == 'July 18th':
+        ojt_date = datetime(2023, 7, 18)
+    elif call.data == 'August 15th':
+        ojt_date = datetime(2023, 8, 15)
     time_remaining = ojt_date - datetime.now()
     if time_remaining.total_seconds() < 0:
-        bot.send_message(message.chat.id, "Started OJT lor!")
+        bot.send_message(call.message.chat.id, "Started OJT lor!")
     else:
-        bot.send_message(message.chat.id, f"{time_remaining.days} Days remaining until start of OJT (July 18th)")
-
-# Reset accidental keyboard layout modifications
-@bot.message_handler(commands=['reset_keyboard'])
-def reset_keyboard(message):
-    remove_markup = ReplyKeyboardRemove()
-    bot.send_message(message.chat.id, 'Custom keyboards removed', reply_markup=remove_markup)
+        bot.send_message(call.message.chat.id, f"{time_remaining.days} Days remaining until start of OJT ({call.data})")
 
 @bot.message_handler(commands=['attendance'])
 def take_attendance(message):
     reply_markup = telebot.types.InlineKeyboardMarkup(row_width=2)
     reply_markup.add(telebot.types.InlineKeyboardButton('Jan', callback_data='jan23'), telebot.types.InlineKeyboardButton('Feb', callback_data='feb23'))
-    bot.send_message(message.chat.id, 'Select cohort', reply_markup=reply_markup)
+    bot.send_message(message.chat.id, 'Select cohort for attendance', reply_markup=reply_markup)
 
 
-@bot.callback_query_handler(func=lambda call: True)
-def test_callback(call): # <- passes a CallbackQuery type object to your function
+@bot.callback_query_handler(func=lambda call: call.data == 'jan23' or call.data == 'feb23')
+def attendance_callback(call): # <- passes a CallbackQuery type object to your function
     if call.data == 'jan23':
         urllink = 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536'
     elif call.data == 'feb23':
@@ -139,6 +142,14 @@ def test_callback(call): # <- passes a CallbackQuery type object to your functio
         bot.send_message(call.message.chat.id, "No available sessions at the moment.")
     else:      
         bot.send_message(call.message.chat.id, attendance_message)
+
+# Reset accidental keyboard layout modifications
+@bot.message_handler(commands=['reset_keyboard'])
+def reset_keyboard(message):
+    remove_markup = telebot.types.ReplyKeyboardRemove()
+    bot.send_message(message.chat.id, 'Custom keyboards removed', reply_markup=remove_markup)
+
+
 
 if __name__ == "__main__":
     print('Bot started')
