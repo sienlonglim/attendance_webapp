@@ -85,7 +85,7 @@ def build_attendance_message(attendance):
     currentDateAndTime = datetime.now()
     currentHour = currentDateAndTime.strftime("%H")
     currentMin = currentDateAndTime.strftime("%M")
-    attendance_message = f"Attendance update at {currentHour}{currentMin}hrs:\n{attendance['session']} \n\nTotal present: {attendance['n_present']}\nAbsentees:\n{absentees}\nLink: 'https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session']}&MOT=1#'"
+    attendance_message = f"Attendance update at {currentHour}{currentMin}hrs:\n{attendance['session']} \n\nTotal present: {attendance['n_present']}\nAbsentees:\n{absentees}\nLink: https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session']}&MOT=1#"
     print(f'Message obtained as follows: \n{"-"*100}\n{attendance_message}\n{"-"*100}')
     return attendance_message
 
@@ -100,20 +100,6 @@ def help(message):
                      '1) Get attendance updates for current session press /attendance\n' +
                      '2) Count down to start of OJT press /countdown',
                      reply_markup=keyboard)
-
-# Attendance function call
-@bot.message_handler(commands=['attendance'])
-def take_attendance(message):
-    urllink = 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536'
-    try:
-        attendance = check_attendance('jan23', urllink)
-        print('Got attendance, now building message')
-        attendance_message = build_attendance_message(attendance)
-    except Exception as e:
-        print(f'Error encountered: {type(e)}{e}')
-        bot.send_message(message.chat.id, "No available sessions at the moment.")
-    else:      
-        bot.send_message(message.chat.id, attendance_message)
 
 # Countdown function call
 @bot.message_handler(commands=['countdown'])
@@ -131,22 +117,50 @@ def reset_keyboard(message):
     remove_markup = ReplyKeyboardRemove()
     bot.send_message(message.chat.id, 'Custom keyboards removed', reply_markup=remove_markup)
 
-@bot.message_handler(commands=['attendance_v2'])
-def take_attendance_v2(message):
+@bot.message_handler(commands=['attendance'])
+def take_attendance(message):
     reply_markup = telebot.types.InlineKeyboardMarkup(row_width=2)
-    reply_markup.add(telebot.types.InlineKeyboardButton('Jan Cohort', callback_data='jan23'), telebot.types.InlineKeyboardButton('Feb Cohort', callback_data='feb23'))
+    reply_markup.add(telebot.types.InlineKeyboardButton('Jan', callback_data='jan23'), telebot.types.InlineKeyboardButton('Feb', callback_data='feb23'))
     bot.send_message(message.chat.id, 'Select cohort', reply_markup=reply_markup)
 
 
 @bot.callback_query_handler(func=lambda call: True)
 def test_callback(call): # <- passes a CallbackQuery type object to your function
-    print(call)
+    if call.data == 'jan23':
+        urllink = 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536'
+    elif call.data == 'feb23':
+        urllink = 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103534'
+    try:
+        attendance = check_attendance(call.data, urllink)
+        print('Got attendance, now building message')
+        attendance_message = build_attendance_message(attendance)
+    except Exception as e:
+        print(f'Error encountered: {type(e)}{e}')
+        bot.send_message(call.message.chat.id, "No available sessions at the moment.")
+    else:      
+        bot.send_message(call.message.chat.id, attendance_message)
 
 if __name__ == "__main__":
     print('Bot started')
     bot.infinity_polling()
 
 
+
+'''
+# Outdated Attendance function call
+@bot.message_handler(commands=['attendance'])
+def take_attendance(message):
+    urllink = 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536'
+    try:
+        attendance = check_attendance('jan23', urllink)
+        print('Got attendance, now building message')
+        attendance_message = build_attendance_message(attendance)
+    except Exception as e:
+        print(f'Error encountered: {type(e)}{e}')
+        bot.send_message(message.chat.id, "No available sessions at the moment.")
+    else:      
+        bot.send_message(message.chat.id, attendance_message)
+'''
 
 '''
 These don't work
