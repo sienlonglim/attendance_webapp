@@ -119,6 +119,7 @@ def countdown_callback(call):
         bot.send_message(call.message.chat.id, "Started OJT lor!")
     else:
         bot.send_message(call.message.chat.id, f"{time_remaining.days} Days remaining until start of OJT ({call.data})")
+    bot.answer_callback_query(call.id)
 
 @bot.message_handler(commands=['attendance'])
 def take_attendance(message):
@@ -140,16 +141,16 @@ def attendance_callback(call): # <- passes a CallbackQuery type object to your f
     except Exception as e:
         print(f'Error encountered: {type(e)}{e}')
         bot.send_message(call.message.chat.id, "No available sessions at the moment.")
+        bot.answer_callback_query(call.id)
     else:      
         bot.send_message(call.message.chat.id, attendance_message)
+        bot.answer_callback_query(call.id)
 
 # Reset accidental keyboard layout modifications
 @bot.message_handler(commands=['reset_keyboard'])
 def reset_keyboard(message):
     remove_markup = telebot.types.ReplyKeyboardRemove()
     bot.send_message(message.chat.id, 'Custom keyboards removed', reply_markup=remove_markup)
-
-
 
 if __name__ == "__main__":
     print('Bot started')
