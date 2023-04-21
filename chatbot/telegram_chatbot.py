@@ -26,6 +26,10 @@ bot = telebot.TeleBot(get_value_from_json("static/secrets.json", "digipen_attend
 def check_attendance(cohort, urllink):
     '''
     Function call for doing the scraping and API call
+    Inputs:
+        cohort - string jan2023 or feb2023
+        urllink - link for wsg summary page
+    Returns a dictionary of the data
     '''
     # Actual code for all the work is here!
     # Getting the html page using requests and parsing using bs4
@@ -65,11 +69,12 @@ def check_attendance(cohort, urllink):
     absent.sort()
     
     # We will pass a dictionary of all the results back to the routing function, which will then be used to render the html
-    return {'session': session_code, 'present':present, 'n_present':len(present), 'absent':absent, 'n_absent':len(absent)}
+    return {'session': session_code, 'present':present, 'n_present':len(present), 'absent':absent, 'n_absent':len(absent), 'cohort':cohort}
 
 def build_attendance_message(attendance):
     '''
     Input: dictionary of data from check_attendance function
+    Returns the built attendance message
     '''
     # Build absentees output
     if len(attendance['absent'])<1:
@@ -89,7 +94,7 @@ def build_attendance_message(attendance):
     print(f'Message obtained as follows: \n{"-"*100}\n{attendance_message}\n{"-"*100}')
     return attendance_message
 
-# Start / help function call
+# Start / help command
 @bot.message_handler(commands=['help', 'start'])
 def help(message):
     keyboard = telebot.types.InlineKeyboardMarkup()
@@ -101,13 +106,15 @@ def help(message):
                      '2) Count down to start of OJT press /countdown',
                      reply_markup=keyboard)
 
-# Countdown function call
+# Countdown command
 @bot.message_handler(commands=['countdown'])
 def countdown(message):
-    reply_markup = telebot.types.InlineKeyboardMarkup(row_width=2)
-    reply_markup.add(telebot.types.InlineKeyboardButton('Jan', callback_data='July 18th'), telebot.types.InlineKeyboardButton('Feb', callback_data='August 15th'))
-    bot.send_message(message.chat.id, 'Select cohort for countdown', reply_markup=reply_markup)    
+    keyboard = telebot.types.InlineKeyboardMarkup(row_width=2)
+    keyboard.add(telebot.types.InlineKeyboardButton('Jan', callback_data='July 18th'), 
+                 telebot.types.InlineKeyboardButton('Feb', callback_data='August 15th'))
+    bot.send_message(message.chat.id, 'Select cohort for countdown', reply_markup=keyboard)    
 
+# Callback query handler for Countdown command
 @bot.callback_query_handler(func=lambda call: call.data == 'July 18th' or call.data == 'August 15th')
 def countdown_callback(call):
     if call.data == 'July 18th':
@@ -121,13 +128,15 @@ def countdown_callback(call):
         bot.send_message(call.message.chat.id, f"{time_remaining.days} Days remaining until start of OJT ({call.data})")
     bot.answer_callback_query(call.id)
 
+# Attendance command
 @bot.message_handler(commands=['attendance'])
 def take_attendance(message):
     reply_markup = telebot.types.InlineKeyboardMarkup(row_width=2)
-    reply_markup.add(telebot.types.InlineKeyboardButton('Jan', callback_data='jan23'), telebot.types.InlineKeyboardButton('Feb', callback_data='feb23'))
+    reply_markup.add(telebot.types.InlineKeyboardButton('Jan', callback_data='jan23'), 
+                     telebot.types.InlineKeyboardButton('Feb', callback_data='feb23'))
     bot.send_message(message.chat.id, 'Select cohort for attendance', reply_markup=reply_markup)
 
-
+# Callback query handler for Attendance command
 @bot.callback_query_handler(func=lambda call: call.data == 'jan23' or call.data == 'feb23')
 def attendance_callback(call): # <- passes a CallbackQuery type object to your function
     if call.data == 'jan23':
@@ -140,8 +149,7 @@ def attendance_callback(call): # <- passes a CallbackQuery type object to your f
         attendance_message = build_attendance_message(attendance)
     except Exception as e:
         print(f'Error encountered: {type(e)}{e}')
-        bot.send_message(call.message.chat.id, "No available sessions at the moment.")
-        bot.answer_callback_query(call.id)
+        bot.answer_callback_query(call.id, "No available sessions at the moment.")
     else:      
         bot.send_message(call.message.chat.id, attendance_message)
         bot.answer_callback_query(call.id)
@@ -151,6 +159,7 @@ def attendance_callback(call): # <- passes a CallbackQuery type object to your f
 def reset_keyboard(message):
     remove_markup = telebot.types.ReplyKeyboardRemove()
     bot.send_message(message.chat.id, 'Custom keyboards removed', reply_markup=remove_markup)
+
 
 if __name__ == "__main__":
     print('Bot started')
