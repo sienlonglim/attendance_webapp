@@ -93,6 +93,14 @@ def build_attendance_message(attendance):
     Input: dictionary of data from check_attendance function
     Returns the built attendance message
     '''
+    currentDateAndTime = datetime.now()
+    currentHour = currentDateAndTime.strftime("%H")
+    currentMin = currentDateAndTime.strftime("%M")
+    if int(currentHour) < 12:
+        session = 'Morning'
+    else:
+        session = 'Afternoon'
+
     if len(attendance)<2:
         # Build absentees output
         if len(attendance['absent'])<1:
@@ -101,24 +109,18 @@ def build_attendance_message(attendance):
             absentees = ''
             count = 1
             for x in attendance['absent']:
-                absentees += str(count)+'. ' + str.title(x) + '\n'
+                absentees += str(count)+'. ' + x.title() + '\n'
                 count +=1
 
         # Build the full message
-        currentDateAndTime = datetime.now()
-        currentHour = currentDateAndTime.strftime("%H")
-        currentMin = currentDateAndTime.strftime("%M")
-        if int(currentHour) < 12:
-            session = 'Morning'
-        else:
-            session = 'Afternoon'
         attendance_message = f"*{attendance['cohort']} cohort*\n{session} session: {currentHour}{currentMin}hrs:*\n{attendance['session']} \n\nTotal present: {attendance['n_present']}\nAbsentees:\n{absentees}"
     else:
-        attendance_message=f'''*Links*:
+        attendance_message=f'''*Links for {session} session*:
         JAN - https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session'][0]}&MOT=1#"
 
         FEB - https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session'][1]}&MOT=1#"
         '''
+    
     print(f'Message obtained as follows: \n{"-"*100}\n{attendance_message}\n{"-"*100}')
     return attendance_message
 
