@@ -69,28 +69,56 @@ def check_attendance(cohort, urllink):
     absent.sort()
     
     # We will pass a dictionary of all the results back to the routing function, which will then be used to render the html
-    return {'session': session_code, 'present':present, 'n_present':len(present), 'absent':absent, 'n_absent':len(absent), 'cohort':cohort}
+    return {'session': session_code, 'present':present, 'n_present':len(present), 'absent':absent, 'n_absent':len(absent), 'cohort':cohort[:3].upper()}
+
+def get_attendance_links(urllinks):
+    '''
+    Function call for scraping the session code only
+    Inputs:
+        urllink - list of links for wsg summary page
+    Returns a dictionary of the data
+    '''
+    session_codes = []
+    for urllink in urllinks:
+        page = requests.get(urllink)
+        soup = BeautifulSoup(page.text, 'html.parser')
+
+        # Session code eg. BH92347
+        session = soup.find(class_='alternative-text').find_all('span')
+        session_codes.append(session[3].text.split(': ')[1].split('.')[0])
+    return {'session': session_codes}
 
 def build_attendance_message(attendance):
     '''
     Input: dictionary of data from check_attendance function
     Returns the built attendance message
     '''
-    # Build absentees output
-    if len(attendance['absent'])<1:
-        absentees = 'None! =)\n'
-    else:
-        absentees = ''
-        count = 1
-        for x in attendance['absent']:
-            absentees += str(count)+'. ' + x + '\n'
-            count +=1
+    if len(attendance)<2:
+        # Build absentees output
+        if len(attendance['absent'])<1:
+            absentees = 'None! =)\n'
+        else:
+            absentees = ''
+            count = 1
+            for x in attendance['absent']:
+                absentees += str(count)+'. ' + str.title(x) + '\n'
+                count +=1
 
-    # Build the full message
-    currentDateAndTime = datetime.now()
-    currentHour = currentDateAndTime.strftime("%H")
-    currentMin = currentDateAndTime.strftime("%M")
-    attendance_message = f"Attendance update at {currentHour}{currentMin}hrs:\n{attendance['session']} \n\nTotal present: {attendance['n_present']}\nAbsentees:\n{absentees}\nLink: https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session']}&MOT=1#"
+        # Build the full message
+        currentDateAndTime = datetime.now()
+        currentHour = currentDateAndTime.strftime("%H")
+        currentMin = currentDateAndTime.strftime("%M")
+        if int(currentHour) < 12:
+            session = 'Morning'
+        else:
+            session = 'Afternoon'
+        attendance_message = f"*{attendance['cohort']} cohort*\n{session} session: {currentHour}{currentMin}hrs:*\n{attendance['session']} \n\nTotal present: {attendance['n_present']}\nAbsentees:\n{absentees}"
+    else:
+        attendance_message=f'''*Links*:
+        JAN - https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session'][0]}&MOT=1#"
+
+        FEB - https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session'][1]}&MOT=1#"
+        '''
     print(f'Message obtained as follows: \n{"-"*100}\n{attendance_message}\n{"-"*100}')
     return attendance_message
 
@@ -99,7 +127,7 @@ def build_attendance_message(attendance):
 def help(message):
     keyboard = telebot.types.InlineKeyboardMarkup()
     keyboard.add(
-       telebot.types.InlineKeyboardButton('Message the developer', url='t.me/natuyuki')
+       telebot.types.InlineKeyboardButton('Provide feedback & suggestions', url='t.me/natuyuki')
     )
     bot.send_message(message.chat.id,
                      '1) Get attendance updates for current session press /attendance\n' +
@@ -115,7 +143,7 @@ def countdown(message):
     bot.send_message(message.chat.id, 'Select cohort for countdown', reply_markup=keyboard)    
 
 # Callback query handler for Countdown command
-@bot.callback_query_handler(func=lambda call: call.data == 'July 18th' or call.data == 'August 15th')
+@bot.callback_query_handler(func=lambda call: call.data in ['July 18th', 'August 15th'])
 def countdown_callback(call):
     if call.data == 'July 18th':
         ojt_date = datetime(2023, 7, 18)
@@ -133,25 +161,27 @@ def countdown_callback(call):
 def take_attendance(message):
     reply_markup = telebot.types.InlineKeyboardMarkup(row_width=2)
     reply_markup.add(telebot.types.InlineKeyboardButton('Jan', callback_data='jan23'), 
-                     telebot.types.InlineKeyboardButton('Feb', callback_data='feb23'))
+                     telebot.types.InlineKeyboardButton('Feb', callback_data='feb23'),
+                     telebot.types.InlineKeyboardButton('Attendance links', callback_data='links'))
     bot.send_message(message.chat.id, 'Select cohort for attendance', reply_markup=reply_markup)
 
 # Callback query handler for Attendance command
-@bot.callback_query_handler(func=lambda call: call.data == 'jan23' or call.data == 'feb23')
-def attendance_callback(call): # <- passes a CallbackQuery type object to your function
-    if call.data == 'jan23':
-        urllink = 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536'
-    elif call.data == 'feb23':
-        urllink = 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103534'
+@bot.callback_query_handler(func=lambda call: call.data in ['jan23', 'feb23', 'links'])
+def attendance_callback(call): 
     try:
-        attendance = check_attendance(call.data, urllink)
+        callback_dict = {'jan23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536',
+                         'feb23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103534'}
+        if call.data == 'links':
+            attendance = get_attendance_links(callback_dict.values()) # Throws in dictionary values as a list into the function
+        else:
+            attendance = check_attendance(call.data, callback_dict[call.data])
         print('Got attendance, now building message')
         attendance_message = build_attendance_message(attendance)
     except Exception as e:
         print(f'Error encountered: {type(e)}{e}')
         bot.answer_callback_query(call.id, "No available sessions at the moment.")
     else:      
-        bot.send_message(call.message.chat.id, attendance_message)
+        bot.send_message(call.message.chat.id, attendance_message, parse_mode='markdown', disable_web_page_preview=True)
         bot.answer_callback_query(call.id)
 
 # Reset accidental keyboard layout modifications
