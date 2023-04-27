@@ -96,7 +96,8 @@ def build_attendance_message(attendance):
     currentDateAndTime = datetime.now()
     currentHour = currentDateAndTime.strftime("%H")
     currentMin = currentDateAndTime.strftime("%M")
-    if int(currentHour) < 12:
+    hourmin = currentHour + currentMin
+    if int(currentHour) < 1230:
         session = 'Morning'
     else:
         session = 'Afternoon'
@@ -140,22 +141,22 @@ def help(message):
 @bot.message_handler(commands=['countdown'])
 def countdown(message):
     keyboard = telebot.types.InlineKeyboardMarkup(row_width=2)
-    keyboard.add(telebot.types.InlineKeyboardButton('Jan', callback_data='July 18th'), 
-                 telebot.types.InlineKeyboardButton('Feb', callback_data='August 15th'))
+    keyboard.add(telebot.types.InlineKeyboardButton('Jan', callback_data='JAN countdown'), 
+                 telebot.types.InlineKeyboardButton('Feb', callback_data='FEB countdown'))
     bot.send_message(message.chat.id, 'Select cohort for countdown', reply_markup=keyboard)    
 
 # Callback query handler for Countdown command
 @bot.callback_query_handler(func=lambda call: call.data in ['July 18th', 'August 15th'])
 def countdown_callback(call):
-    if call.data == 'July 18th':
+    if call.data == 'JAN countdown':
         ojt_date = datetime(2023, 7, 18)
-    elif call.data == 'August 15th':
+    elif call.data == 'FEB countdown':
         ojt_date = datetime(2023, 8, 15)
     time_remaining = ojt_date - datetime.now()
     if time_remaining.total_seconds() < 0:
         bot.send_message(call.message.chat.id, "Started OJT lor!")
     else:
-        bot.send_message(call.message.chat.id, f"{time_remaining.days} Days remaining until start of OJT ({call.data})")
+        bot.send_message(call.message.chat.id, f"{call.data.split()[0]} cohort\n{time_remaining.days} Days remaining until start of OJT ({call.data})")
     bot.answer_callback_query(call.id)
 
 # Attendance command
@@ -192,41 +193,25 @@ def reset_keyboard(message):
     remove_markup = telebot.types.ReplyKeyboardRemove()
     bot.send_message(message.chat.id, 'Custom keyboards removed', reply_markup=remove_markup)
 
+# Link telegram user to namelist
+@bot.message_handler(chat_types=['private'] , commands=['link'])
+def link_id(message):
+    if len(message.text.split(' ', 1)) < 2:
+        text_message = '''To enable personalised attendance updates input the following:
+/link <YOURFULLNAME(CAPS) as per DigiPen record>
+This will allow me to identify and update you personally if you have not taken your attendance for the session.
+        '''
+        bot.send_message(message.chat.id, text_message)
+    else:
+        telegram_user_id = message.chat.id.username
+        username = message.text.split(' ', 1)[1]
+        bot.send_message(message.chat.id, f'{telegram_user_id} : {username}')
 
 if __name__ == "__main__":
     print('Bot started')
     bot.infinity_polling()
 
-
-
 '''
-# Outdated Attendance function call
-@bot.message_handler(commands=['attendance'])
-def take_attendance(message):
-    urllink = 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536'
-    try:
-        attendance = check_attendance('jan23', urllink)
-        print('Got attendance, now building message')
-        attendance_message = build_attendance_message(attendance)
-    except Exception as e:
-        print(f'Error encountered: {type(e)}{e}')
-        bot.send_message(message.chat.id, "No available sessions at the moment.")
-    else:      
-        bot.send_message(message.chat.id, attendance_message)
-'''
-
-'''
-These don't work
-@bot.message_handler(func = lambda message : message.chat.type == 'group')
+@bot.message_handler(func = lambda message : message.chat.type == 'private', commands=['link_telegram_id'])
 def echo(message):
-    bot.reply_to(message, message.text)
-
-
-# Welcome message handler
-@bot.message_handler(func=lambda message: message.new_chat_members is not None)
-def welcome(message):
-    new_member_name = message.new_chat_members[0].first_name
-    welcome_message = f'Welcome to the group, {new_member_name}!'
-    bot.reply_to(message, welcome_message)
-
-'''
+    bot.reply_to(message, message.text)'''
