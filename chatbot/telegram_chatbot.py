@@ -101,7 +101,7 @@ def build_attendance_message(attendance):
     else:
         session = 'Afternoon'
 
-    if len(attendance)<2:
+    if len(attendance)>1:
         # Build absentees output
         if len(attendance['absent'])<1:
             absentees = 'None! =)\n'
@@ -116,9 +116,9 @@ def build_attendance_message(attendance):
         attendance_message = f"*{attendance['cohort']} cohort*\n{session} session: {currentHour}{currentMin}hrs:*\n{attendance['session']} \n\nTotal present: {attendance['n_present']}\nAbsentees:\n{absentees}"
     else:
         attendance_message=f'''*Links for {session} session*:
-        JAN - https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session'][0]}&MOT=1#"
+JAN - https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session'][0]}&MOT=1#
 
-        FEB - https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session'][1]}&MOT=1#"
+FEB - https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session'][1]}&MOT=1#
         '''
     
     print(f'Message obtained as follows: \n{"-"*100}\n{attendance_message}\n{"-"*100}')
