@@ -196,17 +196,55 @@ def reset_keyboard(message):
 # Link telegram user to namelist
 @bot.message_handler(chat_types=['private'] , commands=['link'])
 def link_id(message):
+    '''
+    Function to allow tagging a chatID to a person in the namelist to receive personal updates if absent
+    - Chat must be a private chat for this to work
+    '''
     if len(message.text.split(' ', 1)) < 2:
-        text_message = '''To enable personalised attendance updates input the following:
-/link <YOURFULLNAME(CAPS) as per DigiPen record>
+        text_message = '''Enable personalised attendance updates by typing:
+
+/link <name (case-insensitive)>
+
 This will allow me to identify and update you personally if you have not taken your attendance for the session.
         '''
         bot.send_message(message.chat.id, text_message)
     else:
-        telegram_user_id = message.chat.id.username
-        username = message.text.split(' ', 1)[1]
-        bot.send_message(message.chat.id, f'{telegram_user_id} : {username}')
+        telegram_username = message.chat.username
+        student_name = message.text.split(' ', 1)[1]
+        try:
+            cnx = mysql.connector.connect(**config)
+            cursor = cnx.cursor()
+            query = ("SELECT student_name FROM students "
+                    "WHERE student_name LIKE %s")
+            cursor.execute(query, (f'%{student_name}%',)) 
+            name_matches = [name[0] for name in cursor]
+            no_of_matches = len(name_matches)
+            if no_of_matches > 1:
+                bot.send_message(message.chat.id, f'{no_of_matches} matches found - {name_matches}\n\nPlease key in a more specific name for a full match')
+            elif no_of_matches == 1:
+                reply_markup = telebot.types.InlineKeyboardMarkup(row_width=2)
+                reply_markup.add(telebot.types.InlineKeyboardButton('Yes', callback_data=f'update_db={name_matches}={message.chat.id}'), 
+                                telebot.types.InlineKeyboardButton('No', callback_data=f'update_db=No={message.chat.id}'))
+                bot.send_message(message.chat.id, f'{no_of_matches} match found - {name_matches}\nConfirm update', reply_markup=reply_markup)
+            else:
+                raise KeyError('0 Match')
+        except Exception as err:
+            print(type(err), err)
+            bot.send_message(message.chat.id, f'Oops something went wrong, please check your input and try again.')
+        finally:
+            cursor.close()
+            cnx.close()
 
+# Callback query handler for Account linking
+@bot.callback_query_handler(func=lambda call: call.data.startswith('update_db'))
+def link_callback(call):
+    data = call.data.split('=')
+    if data[1] == 'No':
+        bot.send_message(int(data[2]), 'Request canceled')
+    else:
+        bot.send_message(int(data[2]), f'ChatID - {int(data[2])} now tagged to {data[1]}\nThis Chat will receive updates if {data[1]} is absent')
+    bot.answer_callback_query(call.id)
+            
 if __name__ == "__main__":
     print('Bot started')
     bot.infinity_polling()

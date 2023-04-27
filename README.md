@@ -34,6 +34,17 @@ Further improvements:
 -- Sien Long 24/Mar/2023
 
 ### 7-Apr-2023
-Updates:
+Twilio:
 1. Added twilio features to create a whatsapp chatbot in Twilio sandbox using ngrok to access flask app.
 2. Tried out ngrok to host original flask app.
+
+### 9-Apr-2023
+Telegram Bot:
+1. Migrated code to work in a telegram bot hosted on my Raspberry Pi.
+2. Added a countdown function to start of on-the-job-training.
+
+### 18-Apr-2023 -> 26-Apr-2023
+Updates:
+1. Refactored code and updated scrapping call due to changes in WSG websites.
+2. Added Callback handler.
+3. Updated message formatting.
