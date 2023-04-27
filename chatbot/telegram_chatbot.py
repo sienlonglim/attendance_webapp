@@ -113,7 +113,7 @@ def build_attendance_message(attendance):
                 count +=1
 
         # Build the full message
-        attendance_message = f"*{attendance['cohort']} cohort*\n{session} session: {currentHour}{currentMin}hrs:*\n{attendance['session']} \n\nTotal present: {attendance['n_present']}\nAbsentees:\n{absentees}"
+        attendance_message = f"*{attendance['cohort']} cohort*\n{session} session: {currentHour}{currentMin}hrs:\n{attendance['session']} \n\nTotal present: {attendance['n_present']}\nAbsentees:\n{absentees}"
     else:
         attendance_message=f'''*Links for {session} session*:
 JAN - https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session'][0]}&MOT=1#
