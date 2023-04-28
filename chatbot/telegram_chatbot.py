@@ -48,7 +48,6 @@ def check_attendance(cohort, urllink):
     # Connect to server on localhost
     try:
         cnx = mysql.connector.connect(**config)
-        print('Connected')
         cursor = cnx.cursor()
         query = ("SELECT student_name FROM students "
                 "WHERE class=%s AND cohort_year=%s")
@@ -68,6 +67,7 @@ def check_attendance(cohort, urllink):
     present.sort()
     absent.sort()
 
+    # Check hour and min to determine is morning/afternoon session
     currentDateAndTime = datetime.now()
     currentHour = currentDateAndTime.strftime("%H")
     currentMin = currentDateAndTime.strftime("%M")
@@ -77,7 +77,7 @@ def check_attendance(cohort, urllink):
     else:
         session = 'Afternoon'
     
-    # We will pass a dictionary of all the results back to the routing function, which will then be used to render the html
+    # We will pass a dictionary of all the results for further use
     return {'session_code': session_code,
             'present':present,
             'n_present':len(present),
@@ -104,6 +104,7 @@ def get_attendance_links(urllinks):
         session_page = soup.find(class_='alternative-text').find_all('span')
         session_codes.append(session_page[3].text.split(': ')[1].split('.')[0])
 
+    # Check hour and min to determine is morning/afternoon session
     currentDateAndTime = datetime.now()
     currentHour = currentDateAndTime.strftime("%H")
     currentMin = currentDateAndTime.strftime("%M")
@@ -121,6 +122,7 @@ def build_attendance_message(attendance):
     Input: dictionary of data from check_attendance function
     Returns the built attendance message
     '''
+    # To handle check_attendance() function that has more incoming data
     if len(attendance)>2:
         # Build absentees output
         if len(attendance['absent'])<1:
@@ -140,6 +142,8 @@ def build_attendance_message(attendance):
 Total present: {attendance['n_present']}
 Absentees:
 {absentees}'''
+    
+    # To handle get_attendance_links() function data
     else:
         attendance_message=f'''*Links for {attendance['session']} session*:
 JAN - https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session_code'][0]}&MOT=1#
@@ -153,19 +157,29 @@ FEB - https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attend
 # Start / help command
 @bot.message_handler(commands=['help', 'start'])
 def help(message):
+    '''
+    Message handler for commands 'help' and 'start'
+    Replies with the possible functions of the bot
+    '''
     keyboard = telebot.types.InlineKeyboardMarkup()
     keyboard.add(
        telebot.types.InlineKeyboardButton('Provide feedback & suggestions', url='t.me/natuyuki')
     )
     bot.send_message(message.chat.id,
-                     '1) Get attendance updates for current session press /attendance\n' +
-                     '2) Count down to start of OJT press /countdown',
+                     '1) Get attendance updates for current session - /attendance\n' +
+                     '2) Count down to start of OJT - /countdown\n'
+                     '3) Get personal alert (Works only in DM @digipen_attendance_bot) - /link',
                      reply_markup=keyboard)
 
 
 # Countdown command
 @bot.message_handler(commands=['countdown'])
 def countdown(message):
+    '''
+    Message handler for countdown command
+    Provides inline keyboard option for JAN or FEB
+    Sends a callback query when keyboard button is pressed 
+    '''
     keyboard = telebot.types.InlineKeyboardMarkup(row_width=2)
     keyboard.add(telebot.types.InlineKeyboardButton('Jan', callback_data='JAN countdown'), 
                  telebot.types.InlineKeyboardButton('Feb', callback_data='FEB countdown'))
@@ -174,6 +188,10 @@ def countdown(message):
 # Callback query handler for Countdown command
 @bot.callback_query_handler(func=lambda call: call.data in ['July 18th', 'August 15th'])
 def countdown_callback(call):
+    '''
+    Callback query handler for countdown command
+    Sends the countdown to the chat based on today
+    '''
     if call.data == 'JAN countdown':
         ojt_date = datetime(2023, 7, 18)
     elif call.data == 'FEB countdown':
@@ -189,6 +207,11 @@ def countdown_callback(call):
 # Attendance command
 @bot.message_handler(commands=['attendance'])
 def take_attendance(message):
+    '''
+    Message handler for attendance command
+    Provides inline keyboard option for JAN or FEB or Attendance Links
+    Sends a callback query when a keyboard button is pressed 
+    '''
     reply_markup = telebot.types.InlineKeyboardMarkup(row_width=2)
     reply_markup.add(telebot.types.InlineKeyboardButton('Jan', callback_data='jan23'), 
                      telebot.types.InlineKeyboardButton('Feb', callback_data='feb23'),
@@ -198,6 +221,10 @@ def take_attendance(message):
 # Callback query handler for Attendance command
 @bot.callback_query_handler(func=lambda call: call.data in ['jan23', 'feb23', 'links'])
 def attendance_callback(call): 
+    '''
+    Callback query handler for attendance command
+    Sends the attendance message to the chat
+    '''
     try:
         callback_dict = {'jan23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536',
                          'feb23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103534'}
@@ -216,40 +243,48 @@ def attendance_callback(call):
         bot.send_message(call.message.chat.id, attendance_message, parse_mode='markdown', disable_web_page_preview=True)
 
 
-@bot.message_handler(commands=['test'])
-def test(message):
-    attendance = check_attendance('jan23', 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536')
-    # 2nd part to send updates to linked accounts - NEED TO INCORPORATE THIS TO HAVE THE LINK AND TIME IF POSSIBLE, also use a list if possible
-    try:
-        if len(attendance['absent']) >= 1:
-            cnx = mysql.connector.connect(**config)
-            cursor = cnx.cursor()
-            for absentee in attendance['absent']:
-                query = '''
-                SELECT chat_id
-                FROM students
-                WHERE student_name = %s and chat_id IS NOT NULL
-                '''
-                cursor.execute(query, (absentee,))
-                personal_message = f'''*{attendance['cohort']} cohort*
-{attendance['session']} - {attendance['currentHour']}{attendance['currentMin']}hrs:
-{attendance['session_code']}
+@bot.message_handler(commands=['inform_absentees'])
+def inform_absentees(message):
+    '''
+    Message handler for inform_absentees command
+    Sends a message to all absentees who have their chatID linked to the database
+    '''
+    classes = {'jan23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536',
+               'feb23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103534'}
+    total_absentees = 0
 
-Your attendance is not marked yet
+    # Cycle through both classes
+    for key, value in classes.items():
+        attendance = check_attendance(key, value)
+        try:
+            if len(attendance['absent']) >= 1:
+                cnx = mysql.connector.connect(**config)
+                cursor = cnx.cursor()
+                # placeholders = ', '.join('?' * len(attendance['absent']))
+                query = '''
+                SELECT chat_id, student_name
+                FROM students
+                WHERE student_name in (%s) and chat_id IS NOT NULL;
+                '''
+                cursor.execute(query, tuple(attendance['absent']))
+
+                # Standard message for the absentees
+                personal_message = f'''you are *absent* for {attendance['session']} session as of {attendance['currentHour']}{attendance['currentMin']}hrs.
 
 https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session_code']}&MOT=1#
 '''
-                receiver = cursor.fetchone()[0]
-                if receiver:
-                    bot.send_message(receiver, personal_message)
-    except Exception as e:
-        print(f'Error encountered: {type(e)}{e}')
-    else:
-        pass
-        #bot.answer_callback_query(call.id)
-    finally:
-        cursor.close()
-        cnx.close() 
+                # Send a personal message to each absentee
+                for _ in cursor:
+                    total_absentees +=1
+                    bot.send_message(_[0], f'*{_[1]}*,\n{personal_message}', parse_mode='markdown')
+        except Exception as e:
+            print(f'Error encountered: {type(e)}{e}')
+        finally:
+            cursor.close()
+            cnx.close()
+    
+    # Sends a message to where the command was called, to update user on how many absentee(s) were updated
+    bot.send_message(message.chat.id, f"Reminder sent for {total_absentees} linked absentee(s)")
 
 
 # Reset accidental keyboard layout modifications
@@ -311,12 +346,14 @@ def unlink_id(message):
                  SET chat_id = NULL
                  WHERE chat_id = %s''')
         cursor.execute(query, (message.chat.id,)) 
+        if cursor.rowcount > 0:
+            cnx.commit()
+            bot.send_message(message.chat.id, f'ChatID {message.chat.id} removed from database')
+        else:
+            raise KeyError('No ID matched in database')
     except Exception as err:
         print(type(err), err)
         bot.send_message(message.chat.id, f'Could not find any linked account to this chat')
-    else:
-        cnx.commit()
-        bot.send_message(message.chat.id, 'ChatID unlinked in database')
     finally:
         cursor.close()
         cnx.close()
@@ -327,6 +364,7 @@ def link_callback(call):
     data = call.data.split('=')
     if data[1] == 'No':
         bot.send_message(call.message.chat.id, 'Request canceled')
+        bot.delete_message(call.message.chat.id, call.message.message_id)
     else:
         try:
             cnx = mysql.connector.connect(**config)
@@ -338,9 +376,11 @@ def link_callback(call):
         except Exception as err:
             print(type(err), err)
             bot.send_message(call.message.chat.id, f'Oops something went wrong, please check your input and try again.')
+            bot.delete_message(call.message.chat.id, call.message.message_id)
         else:
             cnx.commit()
-            bot.send_message(call.message.chat.id, f'ChatID - {int(data[2])} now tagged to {data[1]}\nThis Chat will receive updates if {data[1]} is absent')
+            bot.send_message(call.message.chat.id, f'ChatID - {int(data[2])} now tagged to {data[1]}\n\nThis chat will receive updates if {data[1]} is absent')
+            bot.delete_message(call.message.chat.id, call.message.message_id)
         finally:
             cursor.close()
             cnx.close()
