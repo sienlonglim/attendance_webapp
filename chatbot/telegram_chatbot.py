@@ -103,7 +103,18 @@ def get_attendance_links(urllinks):
         # Session code eg. BH92347
         session_page = soup.find(class_='alternative-text').find_all('span')
         session_codes.append(session_page[3].text.split(': ')[1].split('.')[0])
-    return {'session_code': session_codes}
+
+    currentDateAndTime = datetime.now()
+    currentHour = currentDateAndTime.strftime("%H")
+    currentMin = currentDateAndTime.strftime("%M")
+    hourmin = currentHour + currentMin
+    if int(hourmin) < 1230:
+        session = 'Morning'
+    else:
+        session = 'Afternoon'
+        
+    return {'session_code': session_codes,
+            'session': session}
 
 def build_attendance_message(attendance):
     '''
@@ -203,21 +214,24 @@ def attendance_callback(call):
         bot.answer_callback_query(call.id, "No available sessions at the moment.")
     else:      
         bot.send_message(call.message.chat.id, attendance_message, parse_mode='markdown', disable_web_page_preview=True)
-    
+
+
+@bot.message_handler(commands=['test'])
+def test(message):
+    attendance = check_attendance('jan23', 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536')
     # 2nd part to send updates to linked accounts - NEED TO INCORPORATE THIS TO HAVE THE LINK AND TIME IF POSSIBLE, also use a list if possible
-    if session_active:
-        try:
-            if len(attendance['absent']) >= 1:
-                cnx = mysql.connector.connect(**config)
-                cursor = cnx.cursor()
-                for absentee in attendance['absent']:
-                    query = '''
-                    SELECT chat_id
-                    FROM students
-                    WHERE student_name = %s and chat_id IS NOT NULL
-                    '''
-                    cursor.execute(query, (absentee,))
-                    personal_message = f'''*{attendance['cohort']} cohort*
+    try:
+        if len(attendance['absent']) >= 1:
+            cnx = mysql.connector.connect(**config)
+            cursor = cnx.cursor()
+            for absentee in attendance['absent']:
+                query = '''
+                SELECT chat_id
+                FROM students
+                WHERE student_name = %s and chat_id IS NOT NULL
+                '''
+                cursor.execute(query, (absentee,))
+                personal_message = f'''*{attendance['cohort']} cohort*
 {attendance['session']} - {attendance['currentHour']}{attendance['currentMin']}hrs:
 {attendance['session_code']}
 
@@ -225,20 +239,17 @@ Your attendance is not marked yet
 
 https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session_code']}&MOT=1#
 '''
-                    receiver = cursor.fetchone()[0]
-                    if receiver:
-                        bot.send_message(receiver, personal_message)
-        except Exception as e:
-            print(f'Error encountered: {type(e)}{e}')
-        else:
-            bot.answer_callback_query(call.id)
-        finally:
-            cursor.close()
-            cnx.close()
-
-'''@bot.message_handler(commands=['test'])
-def test(message):
-    attendance = {'absent': ['LIM SIEN LONG']}'''     
+                receiver = cursor.fetchone()[0]
+                if receiver:
+                    bot.send_message(receiver, personal_message)
+    except Exception as e:
+        print(f'Error encountered: {type(e)}{e}')
+    else:
+        pass
+        #bot.answer_callback_query(call.id)
+    finally:
+        cursor.close()
+        cnx.close() 
 
 
 # Reset accidental keyboard layout modifications
@@ -282,7 +293,7 @@ This will allow me to identify and update you personally if you have not taken y
                                 telebot.types.InlineKeyboardButton('No', callback_data=f'update_db=No={message.chat.id}'))
                 bot.send_message(message.chat.id, f'{no_of_matches} match found - {name_matches[0]}\nConfirm update', reply_markup=reply_markup)
             else:
-                raise KeyError('0 Match')
+                raise KeyError(f'0 Match for {student_name}')
         except Exception as err:
             print(type(err), err)
             bot.send_message(message.chat.id, f'Oops something went wrong, please check your input and try again.')
