@@ -163,7 +163,8 @@ def help(message):
     '''
     keyboard = telebot.types.InlineKeyboardMarkup()
     keyboard.add(
-       telebot.types.InlineKeyboardButton('Provide feedback & suggestions', url='t.me/natuyuki')
+       telebot.types.InlineKeyboardButton('Provide feedback & suggestions', url='t.me/natuyuki'),
+       telebot.types.InlineKeyboardButton('Message BOT directly to link account', url='t.me/digipen_attendance_bot')
     )
     bot.send_message(message.chat.id,
                      '1) Get attendance updates for current session - /attendance\n' +
@@ -257,7 +258,8 @@ def inform_absentees(message):
     for key, value in classes.items():
         attendance = check_attendance(key, value)
         try:
-            if len(attendance['absent']) >= 1:
+            if attendance['n_absent'] >= 1:
+                bot.send_message(message.chat.id, f"Found {attendance['n_absent']} absentee(s) in {key}")
                 cnx = mysql.connector.connect(**config)
                 cursor = cnx.cursor()
                 # placeholders = ', '.join('?' * len(attendance['absent']))
@@ -277,6 +279,8 @@ https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.h
                 for _ in cursor:
                     total_absentees +=1
                     bot.send_message(_[0], f'*{_[1]}*,\n{personal_message}', parse_mode='markdown')
+            else:
+                bot.send_message(message.chat.id, f"No absentees found for class {key}")
         except Exception as e:
             print(f'Error encountered: {type(e)}{e}')
         finally:
@@ -292,7 +296,6 @@ https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.h
 def reset_keyboard(message):
     remove_markup = telebot.types.ReplyKeyboardRemove()
     bot.send_message(message.chat.id, 'Custom keyboards removed', reply_markup=remove_markup)
-
 
 # Link telegram user to namelist
 @bot.message_handler(chat_types=['private'] , commands=['link'])
