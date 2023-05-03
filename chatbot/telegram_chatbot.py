@@ -187,12 +187,13 @@ def countdown(message):
     bot.send_message(message.chat.id, 'Select cohort for countdown', reply_markup=keyboard)    
 
 # Callback query handler for Countdown command
-@bot.callback_query_handler(func=lambda call: call.data in ['July 18th', 'August 15th'])
+@bot.callback_query_handler(func=lambda call: call.data in ['JAN countdown', 'FEB countdown'])
 def countdown_callback(call):
     '''
     Callback query handler for countdown command
     Sends the countdown to the chat based on today
     '''
+    bot.delete_message(call.message.chat.id, call.message.message_id)
     if call.data == 'JAN countdown':
         ojt_date = datetime(2023, 7, 18)
     elif call.data == 'FEB countdown':
@@ -227,6 +228,7 @@ def attendance_callback(call):
     Sends the attendance message to the chat
     '''
     try:
+        bot.delete_message(call.message.chat.id, call.message.message_id)
         callback_dict = {'jan23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536',
                          'feb23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103534'}
         if call.data == 'links':
@@ -257,32 +259,44 @@ def inform_absentees(message):
     # Cycle through both classes
     for key, value in classes.items():
         attendance = check_attendance(key, value)
+        # dummy for testing
+        '''attendance = {'session_code': 'session_code',
+                    'absent':['LIM SIEN LONG', 'KOH CHONG KIAN', 'RHONDA LYNN MCGLADDERY'],
+                    'n_absent': 3,
+                    'cohort':'JAN',
+                    'currentHour':'08',
+                    'currentMin':'09',
+                    'session': 'Morning'}'''
+
         try:
             if attendance['n_absent'] >= 1:
                 bot.send_message(message.chat.id, f"Found {attendance['n_absent']} absentee(s) in {key}")
                 cnx = mysql.connector.connect(**config)
                 cursor = cnx.cursor()
-                # placeholders = ', '.join('?' * len(attendance['absent']))
-                query = '''
+                placeholder = '%s'
+                placeholders = ', '.join(placeholder for _ in range(len(attendance['absent'])))
+                query = f'''
                 SELECT chat_id, student_name
                 FROM students
-                WHERE student_name in (%s) and chat_id IS NOT NULL;
+                WHERE student_name in ({placeholders}) and chat_id IS NOT NULL;
                 '''
                 cursor.execute(query, tuple(attendance['absent']))
 
                 # Standard message for the absentees
-                personal_message = f'''you are *absent* for {attendance['session']} session as of {attendance['currentHour']}{attendance['currentMin']}hrs.
+                personal_message = f'''you are absent for {attendance['session']} session as of {attendance['currentHour']}{attendance['currentMin']}hrs.
 
 https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session_code']}&MOT=1#
 '''
                 # Send a personal message to each absentee
-                for _ in cursor:
+                absentees = cursor.fetchall()
+                for _ in absentees:
                     total_absentees +=1
-                    bot.send_message(_[0], f'*{_[1]}*,\n{personal_message}', parse_mode='markdown')
+                    bot.send_message(_[0], f"{_[1]},\n{personal_message}") #, parse_mode='markdown')
             else:
                 bot.send_message(message.chat.id, f"No absentees found for class {key}")
         except Exception as e:
             print(f'Error encountered: {type(e)}{e}')
+            bot.send_message(message.chat.id, f'Error encountered: {type(e)}{e}')
         finally:
             cursor.close()
             cnx.close()
