@@ -161,7 +161,7 @@ def help(message):
     Message handler for commands 'help' and 'start'
     Replies with the possible functions of the bot
     '''
-    keyboard = telebot.types.InlineKeyboardMarkup()
+    keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
     keyboard.add(
        telebot.types.InlineKeyboardButton('Provide feedback & suggestions', url='t.me/natuyuki'),
        telebot.types.InlineKeyboardButton('Message BOT directly to link account', url='t.me/digipen_attendance_bot')
@@ -311,6 +311,26 @@ def reset_keyboard(message):
     remove_markup = telebot.types.ReplyKeyboardRemove()
     bot.send_message(message.chat.id, 'Custom keyboards removed', reply_markup=remove_markup)
 
+# Instructions for groupchat
+@bot.message_handler(chat_types=['group'] , commands=['link'])
+def link_id_instructions(message):
+    '''
+    Function to inform user about linking
+    '''
+    text_message = '''This command can only work in private chat.
+Enable personalised attendance updates by typing:
+
+/link <name (case-insensitive)>
+
+This will allow me to identify and update you personally if you have not taken your attendance for the session.
+To unlink accounts from this chat, /unlink
+    '''
+    keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+    keyboard.add(
+       telebot.types.InlineKeyboardButton('Message me directly', url='t.me/digipen_attendance_bot')
+    )
+    bot.send_message(message.chat.id, text_message, reply_markup=keyboard)
+
 # Link telegram user to namelist
 @bot.message_handler(chat_types=['private'] , commands=['link'])
 def link_id(message):
@@ -324,6 +344,7 @@ def link_id(message):
 /link <name (case-insensitive)>
 
 This will allow me to identify and update you personally if you have not taken your attendance for the session.
+To unlink accounts from this chat, /unlink
         '''
         bot.send_message(message.chat.id, text_message)
     else:
