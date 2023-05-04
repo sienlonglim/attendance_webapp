@@ -48,3 +48,7 @@ Updates:
 1. Refactored code and updated scrapping call due to changes in WSG websites.
 2. Added Callback handler.
 3. Updated message formatting.
+
+### 5-May-2023
+Personal updates:
+1. Added function to allow users to subcribe to personal updates if they are absent, done through DMing the bot so that it can save the chat.id into the database
