@@ -318,7 +318,7 @@ def link_id_instructions(message):
     Function to inform user about linking
     '''
     text_message = '''This command can only work in private chat.
-Enable personalised attendance updates by typing:
+Enable personalised attendance updates by talking to me directly and typing:
 
 /link <name (case-insensitive)>
 
@@ -331,7 +331,7 @@ To unlink accounts from this chat, /unlink
     )
     bot.send_message(message.chat.id, text_message, reply_markup=keyboard)
 
-# Link telegram user to namelist
+# Link telegram user to namelist (private chat command /link)
 @bot.message_handler(chat_types=['private'] , commands=['link'])
 def link_id(message):
     '''
