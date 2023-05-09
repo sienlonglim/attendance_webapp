@@ -202,7 +202,7 @@ def countdown_callback(call):
     if time_remaining.total_seconds() < 0:
         bot.send_message(call.message.chat.id, "Started OJT lor!")
     else:
-        bot.send_message(call.message.chat.id, f"{call.data.split()[0]} cohort\n{time_remaining.days} Days remaining until start of OJT ({call.data})")
+        bot.send_message(call.message.chat.id, f"{call.data.split()[0]} cohort\n{time_remaining.days} Days remaining until start of OJT ({ojt_date})")
     bot.answer_callback_query(call.id)
 
 
