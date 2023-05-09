@@ -229,8 +229,8 @@ def attendance_callback(call):
     '''
     try:
         bot.delete_message(call.message.chat.id, call.message.message_id)
-        callback_dict = {'jan23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536',
-                         'feb23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103534'}
+        callback_dict = {'jan23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA134486',
+                         'feb23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536'}
         if call.data == 'links':
             attendance = get_attendance_links(callback_dict.values()) # Throws in dictionary values as a list into the function
         else:
@@ -252,8 +252,8 @@ def inform_absentees(message):
     Message handler for inform_absentees command
     Sends a message to all absentees who have their chatID linked to the database
     '''
-    classes = {'jan23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536',
-               'feb23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103534'}
+    classes = {'jan23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA134486',
+               'feb23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536'}
     total_absentees = 0
 
     # Cycle through both classes
