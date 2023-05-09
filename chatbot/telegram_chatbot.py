@@ -88,7 +88,7 @@ def check_attendance(cohort, urllink):
             'currentMin':currentMin,
             'session': session}
 
-def get_attendance_links(urllinks):
+def get_attendance_links(callback_dict):
     '''
     Function call for scraping the session code only
     Inputs:
@@ -96,13 +96,18 @@ def get_attendance_links(urllinks):
     Returns a dictionary of the data
     '''
     session_codes = []
-    for urllink in urllinks:
-        page = requests.get(urllink)
-        soup = BeautifulSoup(page.text, 'html.parser')
+    cohorts = []
+    for cohort, urllink in callback_dict.items():
+        try:
+            page = requests.get(urllink)
+            soup = BeautifulSoup(page.text, 'html.parser')
 
-        # Session code eg. BH92347
-        session_page = soup.find(class_='alternative-text').find_all('span')
-        session_codes.append(session_page[3].text.split(': ')[1].split('.')[0])
+            # Session code eg. BH92347
+            session_page = soup.find(class_='alternative-text').find_all('span')
+            session_codes.append(session_page[3].text.split(': ')[1].split('.')[0])
+            cohorts.append(cohort[:3])
+        except Exception as e:
+            print(f'Error getting session code: {e}')
 
     # Check hour and min to determine is morning/afternoon session
     currentDateAndTime = datetime.now()
@@ -115,7 +120,8 @@ def get_attendance_links(urllinks):
         session = 'Afternoon'
         
     return {'session_code': session_codes,
-            'session': session}
+            'session': session,
+            'cohort': cohorts}
 
 def build_attendance_message(attendance):
     '''
@@ -123,7 +129,7 @@ def build_attendance_message(attendance):
     Returns the built attendance message
     '''
     # To handle check_attendance() function that has more incoming data
-    if len(attendance)>2:
+    if len(attendance)>3:
         # Build absentees output
         if len(attendance['absent'])<1:
             absentees = 'None! =)\n'
@@ -145,11 +151,9 @@ Absentees:
     
     # To handle get_attendance_links() function data
     else:
-        attendance_message=f'''*Links for {attendance['session']} session*:
-JAN - https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session_code'][0]}&MOT=1#
-
-FEB - https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={attendance['session_code'][1]}&MOT=1#
-        '''
+        attendance_message=f'''*Links for {attendance['session']} session*:\n'''
+        for session_code, cohort in zip(attendance['session_code'], attendance['cohort']):
+             attendance_message = attendance_message + f"{cohort.title()} - https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.html?attendanceCode={session_code}&MOT=1#\n"
     
     #print(f'Message obtained as follows: \n{"-"*100}\n{attendance_message}\n{"-"*100}')
     return attendance_message
@@ -230,17 +234,14 @@ def attendance_callback(call):
     try:
         bot.delete_message(call.message.chat.id, call.message.message_id)
         callback_dict = {'jan23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA134486',
-                         'feb23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536'}
+                         'feb23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103534'} # to change to RA103536 once next module starts
         if call.data == 'links':
-            attendance = get_attendance_links(callback_dict.values()) # Throws in dictionary values as a list into the function
+            attendance = get_attendance_links(callback_dict) # Throws in dictionary values as a list into the function
         else:
             attendance = check_attendance(call.data, callback_dict[call.data])
-        print('Got attendance, now building message')
         attendance_message = build_attendance_message(attendance)
-        session_active = True
     except Exception as e:
         print(f'Error encountered: {type(e)}{e}')
-        session_active = False
         bot.answer_callback_query(call.id, "No available sessions at the moment.")
     else:      
         bot.send_message(call.message.chat.id, attendance_message, parse_mode='markdown', disable_web_page_preview=True)
@@ -254,15 +255,14 @@ def inform_absentees(message):
     '''
     classes = {'jan23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA134486',
                'feb23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536'}
-    total_absentees = 0
-
+    
     # Cycle through both classes
     for key, value in classes.items():
         attendance = check_attendance(key, value)
         # dummy for testing
         '''attendance = {'session_code': 'session_code',
-                    'absent':['LIM SIEN LONG', 'KOH CHONG KIAN', 'RHONDA LYNN MCGLADDERY'],
-                    'n_absent': 3,
+                    'absent':['LIM SIEN LONG'],
+                    'n_absent': 1,
                     'cohort':'JAN',
                     'currentHour':'08',
                     'currentMin':'09',
@@ -289,9 +289,12 @@ https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.h
 '''
                 # Send a personal message to each absentee
                 absentees = cursor.fetchall()
+                total_absentees = 0
                 for _ in absentees:
                     total_absentees +=1
                     bot.send_message(_[0], f"{_[1]},\n{personal_message}") #, parse_mode='markdown')
+                # Sends a message to where the command was called, to update user on how many absentee(s) were updated
+                bot.send_message(message.chat.id, f"Reminder sent for {total_absentees} linked absentee(s) in {key}")
             else:
                 bot.send_message(message.chat.id, f"No absentees found for class {key}")
         except Exception as e:
@@ -301,10 +304,6 @@ https://www.myskillsfuture.gov.sg/content/portal/en/individual/take-attendance.h
             cursor.close()
             cnx.close()
     
-    # Sends a message to where the command was called, to update user on how many absentee(s) were updated
-    bot.send_message(message.chat.id, f"Reminder sent for {total_absentees} linked absentee(s)")
-
-
 # Reset accidental keyboard layout modifications
 @bot.message_handler(commands=['reset_keyboard'])
 def reset_keyboard(message):
