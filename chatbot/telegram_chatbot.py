@@ -234,7 +234,7 @@ def attendance_callback(call):
     try:
         bot.delete_message(call.message.chat.id, call.message.message_id)
         callback_dict = {'jan23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA134486',
-                         'feb23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103534'} # to change to RA103536 once next module starts
+                         'feb23': 'https://www.myskillsfuture.gov.sg/api/take-attendance/RA103536'} 
         if call.data == 'links':
             attendance = get_attendance_links(callback_dict) # Throws in dictionary values as a list into the function
         else:
