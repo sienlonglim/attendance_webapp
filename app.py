@@ -55,7 +55,7 @@ def attendance():
             except Exception as e:
                 # Catch any exceptions and log them in the app logger, this also handles the error message on the html
                 flash(e) if app.debug==True else flash('Oops, something went wrong')
-                app.logger.info(e)
+                app.logger.error(e)
             else:
                 return render_template('attendance.html', attendance_report=attendance_report)
     return render_template('attendance.html', attendance_report=None)
